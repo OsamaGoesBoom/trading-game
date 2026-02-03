@@ -1,0 +1,248 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <title>QUANTUM APEX // COMMAND</title>
+    <style>
+        :root { 
+            --bg: #010409; --panel: #0d1117; --border: #30363d;
+            --cyan: #58a6ff; --magenta: #bc8cff; --green: #3fb950; --red: #f85149; --gold: #d29922;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+        body { background: var(--bg); color: #c9d1d9; height: 100vh; overflow: hidden; font-size: 13px; }
+
+        /* OVERLAYS */
+        .overlay { position: fixed; inset: 0; background: var(--bg); z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; }
+        .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 30px; width: 100%; max-width: 500px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        
+        /* HUB STYLING */
+        #mainHub { display: none; }
+        .hub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .tutorial-step { border-left: 2px solid var(--cyan); padding-left: 10px; margin-bottom: 10px; }
+
+        /* GAME LAYOUT */
+        .app { display: grid; grid-template-columns: 280px 1fr 300px; grid-template-rows: 60px 1fr 40px; height: 100vh; gap: 8px; padding: 8px; visibility: hidden; }
+        .box { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; overflow: hidden; }
+        
+        /* BUTTONS & INPUTS */
+        .btn { padding: 10px 15px; border: 1px solid var(--border); border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; background: #21262d; color: #c9d1d9; width: 100%; margin: 5px 0; }
+        .btn:hover { background: #30363d; border-color: #8b949e; }
+        .btn-primary { background: var(--green); color: #fff; border: none; }
+        .btn-buy { background: rgba(63, 185, 80, 0.15); color: var(--green); border: 1px solid var(--green); }
+        .btn-sell { background: rgba(248, 81, 73, 0.15); color: var(--red); border: 1px solid var(--red); }
+        
+        input { background: #0d1117; border: 1px solid var(--border); padding: 12px; color: #fff; border-radius: 6px; width: 100%; margin-bottom: 15px; outline: none; }
+
+        /* CHART & LISTS */
+        .ticker-list { overflow-y: auto; flex-grow: 1; }
+        .ticker { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid var(--border); cursor: pointer; }
+        .active-t { border-left: 3px solid var(--cyan); background: #1c2128; }
+        canvas { background: #010409; flex-grow: 1; border: 1px solid var(--border); border-radius: 6px; }
+
+        .stat-big { font-size: 24px; font-weight: 600; }
+        .mode-tab { flex: 1; text-align: center; padding: 8px; cursor: pointer; border-bottom: 2px solid transparent; color: #8b949e; font-weight: 600; }
+        .active-tab { color: var(--cyan); border-bottom-color: var(--cyan); }
+    </style></head><body>
+
+    <div id="setupScreen" class="overlay">
+        <div class="card">
+            <h2 style="margin-bottom: 10px;">Initialize Profile</h2>
+            <p style="color: #8b949e; margin-bottom: 20px;">Enter your trader callsign to sync with the terminal.</p>
+            <input type="text" id="username" placeholder="Username" maxlength="12">
+            <button class="btn btn-primary" onclick="toHub()">Create Identity</button>
+        </div>
+    </div>
+
+    <div id="mainHub" class="overlay">
+        <div class="card" style="max-width: 600px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>Terminal Hub</h2>
+                <span id="hubUser" style="color: var(--magenta); font-weight: bold;"></span>
+            </div>
+            
+            <div class="hub-grid">
+                <div class="box">
+                    <p style="font-weight: bold; margin-bottom: 10px;">Tutorial</p>
+                    <div class="tutorial-step"><b>Day Mode:</b> High-fidelity Pro Candlesticks with wicks.</div>
+                    <div class="tutorial-step"><b>Investor:</b> Minimalist area-line trends.</div>
+                </div>
+                <div class="box">
+                    <p style="font-weight: bold; margin-bottom: 10px;">Update Log v14.0</p>
+                    <p style="font-size: 11px; color: #8b949e;">- Real Candlestick Wicks.<br>- Dynamic Price Line.<br>- High-Visibility Charting.</p>
+                </div>
+            </div>
+            <button class="btn btn-primary" style="margin-top: 20px; padding: 15px;" onclick="enterGame()">Enter Market</button>
+        </div>
+    </div>
+
+    <div class="app" id="app">
+        <header class="box" style="grid-column: span 3; flex-direction: row; align-items: center; justify-content: space-between;">
+            <div style="font-weight: bold; font-size: 16px;"><span style="color:var(--cyan)">QA</span>_TERMINAL</div>
+            <div style="text-align: right;">
+                <span style="font-size: 10px; color: #8b949e;">CASH_RESERVE</span><br>
+                <span id="cashDisp" class="stat-big" style="color:var(--green)">$0</span>
+            </div>
+        </header>
+
+        <aside class="box"><div class="ticker-list" id="stockList"></div></aside>
+
+        <main class="box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+                <h2 id="sName">--</h2>
+                <div id="sPrice" class="stat-big">$0.00</div>
+            </div>
+            <canvas id="chart"></canvas>
+        </main>
+
+        <aside class="box">
+            <div style="display: flex; border-bottom: 1px solid var(--border); margin-bottom: 15px;">
+                <div id="tabDay" class="mode-tab active-tab" onclick="setMode('day')">DAY_TRADE</div>
+                <div id="tabInv" class="mode-tab" onclick="setMode('inv')">INVESTOR</div>
+            </div>
+            <div id="pnlDisp" style="font-size: 24px; font-weight: bold;">$0.00</div>
+            <div id="qtyDisp" style="color: #8b949e; margin-bottom: 20px;">Units: 0</div>
+            <button class="btn btn-buy" onclick="trade(1)">Buy</button>
+            <button class="btn btn-sell" onclick="trade(-1)">Sell</button>
+            <div style="margin-top: auto;">
+                <button class="btn" onclick="saveGame()">Manual Save</button>
+                <button class="btn" onclick="location.reload()">Log Out</button>
+            </div>
+        </aside>
+
+        <footer class="box" style="grid-column: span 3; flex-direction: row; border: none; background: transparent; justify-content: space-between; color: #484f58; font-size: 11px;">
+            <div id="status">System Online</div>
+            <div id="clock">00:00:00</div>
+        </footer>
+    </div>
+
+    <script>
+        const Game = { user: "", cash: 10000, port: {}, mode: 'day', active: null };
+        const Stocks = [];
+        const cvs = document.getElementById('chart'), ctx = cvs.getContext('2d');
+
+        function toHub() {
+            const val = document.getElementById('username').value;
+            if(!val) return;
+            Game.user = val;
+            document.getElementById('hubUser').innerText = "@" + val;
+            document.getElementById('setupScreen').style.display = 'none';
+            document.getElementById('mainHub').style.display = 'flex';
+            generateMarket();
+        }
+
+        function enterGame() {
+            document.getElementById('mainHub').style.display = 'none';
+            document.getElementById('app').style.visibility = 'visible';
+            viewStock(Stocks[0].sym);
+            setInterval(tick, 1000);
+            resize();
+        }
+
+        function generateMarket() {
+            const p = ["Net", "Cloud", "Bio", "Cyber", "Solar", "Zon", "App", "Nvid", "Tesla", "Micro"];
+            const s = ["Tech", "Systems", "Link", "Corp", "Soft", "Base", "X", "Dyne", "Grid", "Scale"];
+            for(let i=0; i<60; i++) {
+                let name = p[i%10] + s[Math.floor(Math.random()*10)];
+                Stocks.push({ name: name, sym: name.substring(0,3).toUpperCase() + (100+i), price: 100 + Math.random() * 400, vol: 0.02, hist: [] });
+            }
+            const list = document.getElementById('stockList');
+            Stocks.forEach(x => {
+                list.innerHTML += `<div class="ticker" id="tk-${x.sym}" onclick="viewStock('${x.sym}')">
+                    <span><b>${x.sym}</b></span><span id="p-${x.sym}">$0.00</span>
+                </div>`;
+            });
+        }
+
+        function viewStock(sym) {
+            Game.active = Stocks.find(x => x.sym === sym);
+            document.querySelectorAll('.ticker').forEach(e => e.classList.remove('active-t'));
+            document.getElementById('tk-'+sym).classList.add('active-t');
+            document.getElementById('sName').innerText = Game.active.name;
+        }
+
+        function setMode(m) {
+            Game.mode = m;
+            document.getElementById('tabDay').className = m==='day'?'mode-tab active-tab':'mode-tab';
+            document.getElementById('tabInv').className = m==='inv'?'mode-tab active-tab':'mode-tab';
+        }
+
+        function tick() {
+            Stocks.forEach(s => {
+                let open = s.price;
+                let change = s.price * (Math.random() - 0.5) * s.vol;
+                s.price += change;
+                // High and Low simulation
+                let high = Math.max(open, s.price) + (Math.random() * 2);
+                let low = Math.min(open, s.price) - (Math.random() * 2);
+                s.hist.push({o: open, c: s.price, h: high, l: low});
+                if(s.hist.length > 50) s.hist.shift();
+                document.getElementById(`p-${s.sym}`).innerText = `$${s.price.toFixed(2)}`;
+            });
+            draw(); updateUI();
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+        }
+
+        function draw() {
+            ctx.clearRect(0,0,cvs.width,cvs.height);
+            const h = Game.active.hist; if(h.length < 2) return;
+            const min = Math.min(...h.map(x=>x.l)) * 0.99, max = Math.max(...h.map(x=>x.h)) * 1.01, range = max-min;
+            const w = cvs.width / 50;
+
+            h.forEach((d, i) => {
+                const x = i * w + (w/2);
+                const yO = cvs.height - ((d.o-min)/range * cvs.height);
+                const yC = cvs.height - ((d.c-min)/range * cvs.height);
+                const yH = cvs.height - ((d.h-min)/range * cvs.height);
+                const yL = cvs.height - ((d.l-min)/range * cvs.height);
+                const color = d.c >= d.o ? '#3fb950' : '#f85149';
+
+                if(Game.mode === 'day') {
+                    // Wick (Thin line)
+                    ctx.strokeStyle = color; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(x, yH); ctx.lineTo(x, yL); ctx.stroke();
+                    // Body (Rectangle)
+                    ctx.fillStyle = color;
+                    ctx.fillRect(i*w + 4, Math.min(yO, yC), w-8, Math.max(Math.abs(yO-yC), 1));
+                } else {
+                    ctx.strokeStyle = '#58a6ff'; ctx.lineWidth = 2;
+                    if(i>0) {
+                        let prevY = cvs.height - ((h[i-1].c-min)/range * cvs.height);
+                        ctx.beginPath(); ctx.moveTo((i-1)*w + (w/2), prevY); ctx.lineTo(x, yC); ctx.stroke();
+                    }
+                }
+
+                // Price Tracker Line (on the last candle)
+                if(i === h.length - 1) {
+                    ctx.setLineDash([5, 5]); ctx.strokeStyle = "#8b949e"; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(0, yC); ctx.lineTo(cvs.width, yC); ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            });
+        }
+
+        function trade(dir) {
+            const s = Game.active; if(!Game.port[s.sym]) Game.port[s.sym] = { qty: 0, avg: 0 };
+            const p = Game.port[s.sym];
+            if(dir === 1 && Game.cash >= s.price) { Game.cash -= s.price; p.avg = (p.qty*p.avg + s.price) / (++p.qty); }
+            else if(dir === -1 && p.qty > 0) { Game.cash += s.price; p.qty--; }
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('cashDisp').innerText = `$${Game.cash.toLocaleString()}`;
+            document.getElementById('sPrice').innerText = `$${Game.active.price.toFixed(2)}`;
+            const p = Game.port[Game.active.sym];
+            if(p && p.qty > 0) {
+                const diff = (Game.active.price - p.avg) * p.qty;
+                document.getElementById('pnlDisp').innerText = (diff>=0?"+":"") + "$" + diff.toFixed(2);
+                document.getElementById('pnlDisp').style.color = diff>=0?'var(--green)':'var(--red)';
+                document.getElementById('qtyDisp').innerText = `Units: ${p.qty} | Avg: $${p.avg.toFixed(2)}`;
+            } else {
+                document.getElementById('pnlDisp').innerText = "$0.00";
+                document.getElementById('pnlDisp').style.color = "#8b949e";
+                document.getElementById('qtyDisp').innerText = "Units: 0";
+            }
+        }
+
+        function saveGame() { localStorage.setItem('QA_SAVE_'+Game.user, JSON.stringify({cash: Game.cash, port: Game.port})); alert("Profile Synced."); }
+        function resize() { cvs.width = cvs.offsetWidth; cvs.height = cvs.offsetHeight; }
+        window.onresize = resize;
+    </script></body></html>
