@@ -1,7 +1,258 @@
-heres the what i want you to add the updates i wana add are buy and sell max so you cna buy ther max shars posible and sell max postonble cryto system so you haev top pay 150k to unlock it and the cryto is faster and a lkot mroe money per share and each coponey has max shares and if you buy them all you own thew componmey and make income ever 5mins and you cna maek your own cryipto currency for 10bilon cash adn name it what you want and put 1-10000 shares so its not alot and amek your own prace nothign above 100 and it saves on the github page adn then theres a oil compney and you need to own your own cryto compnay and pay 1bil cash yo get the oil componey and you get offliline income and you cna buy oil pumps for 2.5mil and 1k gallons evrey 30mins and and a oil rig for 10bil and you get 1mil gallisn per 20mins and you cna name your compyney adn you cna ship out the oil and maek money oil praces change every 24 hours adn you can put your money in the bank and earn intrest based of of what kind of intrest acount you have lilke low or high intrest and you have to pay taxes on your oil comoneys not alot but a good amont also keep my theme going and help em set it up this is what my git hub scripts look like help em step by step
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <title>QUANTUM APEX // SECURE_ACCESS</title>
+    <style>
+        :root { 
+            --bg: #010409; --panel: #0d1117; --border: #30363d;
+            --cyan: #58a6ff; --magenta: #bc8cff; --green: #3fb950; --red: #f85149; --gold: #d29922;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+        body { background: var(--bg); color: #c9d1d9; height: 100vh; overflow: hidden; font-size: 13px; }
 
+        /* AUTHENTICATION OVERLAY */
+        .auth-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: flex; justify-content: center; align-items: center; }
+        .auth-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 30px; width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); }
+        .auth-tabs { display: flex; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .tab { flex: 1; text-align: center; padding: 10px; cursor: pointer; color: #8b949e; transition: 0.3s; }
+        .tab.active { color: var(--cyan); border-bottom: 2px solid var(--cyan); font-weight: bold; }
 
+        /* GAME INTERFACE */
+        #mainHub { display: none; }
+        .app { display: grid; grid-template-columns: 280px 1fr 300px; grid-template-rows: 60px 1fr 40px; height: 100vh; gap: 8px; padding: 8px; visibility: hidden; }
+        .box { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; overflow: hidden; }
+        
+        .btn { padding: 10px 15px; border: 1px solid var(--border); border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; background: #21262d; color: #c9d1d9; width: 100%; margin: 5px 0; }
+        .btn:hover { background: #30363d; border-color: #8b949e; }
+        .btn-primary { background: var(--green); color: #fff; border: none; }
+        
+        input { background: #0d1117; border: 1px solid var(--border); padding: 12px; color: #fff; border-radius: 6px; width: 100%; margin-bottom: 10px; outline: none; }
+        input:focus { border-color: var(--cyan); }
 
-heres what my file and site look like and keep every thing int his code just add the updates to this code
+        .ticker-list { overflow-y: auto; flex-grow: 1; }
+        .ticker { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid var(--border); cursor: pointer; }
+        .active-t { border-left: 3px solid var(--cyan); background: #1c2128; }
+        canvas { background: #010409; flex-grow: 1; border: 1px solid var(--border); border-radius: 6px; }
 
+        .stat-big { font-size: 24px; font-weight: 600; }
+        .mode-tab { flex: 1; text-align: center; padding: 8px; cursor: pointer; border-bottom: 2px solid transparent; color: #8b949e; font-weight: 600; }
+        .active-tab { color: var(--cyan); border-bottom-color: var(--cyan); }
+    </style></head><body>
 
+    <div id="authScreen" class="auth-overlay">
+        <div class="auth-card">
+            <h2 style="text-align:center; margin-bottom:20px; color:var(--cyan)">QA_CORE_AUTH</h2>
+            <div class="auth-tabs">
+                <div id="loginTab" class="tab active" onclick="setAuthMode('login')">LOGIN</div>
+                <div id="signupTab" class="tab" onclick="setAuthMode('signup')">SIGN UP</div>
+            </div>
+            <input type="text" id="username" placeholder="Terminal ID (Username)">
+            <input type="password" id="password" placeholder="Access Key (Password)">
+            <button id="authBtn" class="btn btn-primary" onclick="handleAuth()">INITIALIZE SESSION</button>
+            <p id="authError" style="color:var(--red); font-size:11px; margin-top:10px; text-align:center;"></p>
+        </div>
+    </div>
+
+    <div id="mainHub" class="auth-overlay" style="display:none; z-index:1500;">
+        <div class="auth-card" style="width: 500px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3>Terminal Connected</h3>
+                <span id="hubUser" style="color:var(--magenta)"></span>
+            </div>
+            <p style="font-size:12px; color:#8b949e; margin-bottom:15px;">Historical data synced. Candlestick patterns initialized.</p>
+            <button class="btn btn-primary" style="padding:15px;" onclick="enterGame()">ENTER MARKET</button>
+        </div>
+    </div>
+
+    <div class="app" id="app">
+        <header class="box" style="grid-column: span 3; flex-direction: row; align-items: center; justify-content: space-between;">
+            <div style="font-weight: bold; font-size: 16px;"><span style="color:var(--cyan)">QA</span>_TERMINAL</div>
+            <div style="text-align: right;">
+                <span id="cashDisp" class="stat-big" style="color:var(--green)">$0</span>
+            </div>
+        </header>
+
+        <aside class="box"><div class="ticker-list" id="stockList"></div></aside>
+
+        <main class="box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+                <h2 id="sName">--</h2>
+                <div id="sPrice" class="stat-big">$0.00</div>
+            </div>
+            <canvas id="chart"></canvas>
+        </main>
+
+        <aside class="box">
+            <div style="display: flex; border-bottom: 1px solid var(--border); margin-bottom: 15px;">
+                <div id="tabDay" class="mode-tab active-tab" onclick="setMode('day')">DAY_TRADE</div>
+                <div id="tabInv" class="mode-tab" onclick="setMode('inv')">INVESTOR</div>
+            </div>
+            <div id="pnlDisp" style="font-size: 24px; font-weight: bold;">$0.00</div>
+            <div id="qtyDisp" style="color: #8b949e; margin-bottom: 20px;">Units: 0</div>
+            <button class="btn btn-buy" onclick="trade(1)">Buy</button>
+            <button class="btn btn-sell" onclick="trade(-1)">Sell</button>
+            <div style="margin-top: auto;">
+                <button class="btn" onclick="saveGame(true)">Manual Sync</button>
+                <button class="btn" onclick="location.reload()">Log Out</button>
+            </div>
+        </aside>
+
+        <footer class="box" style="grid-column: span 3; flex-direction: row; border: none; background: transparent; justify-content: space-between; color: #484f58; font-size: 11px;">
+            <div id="status">System Online</div>
+            <div id="clock">00:00:00</div>
+        </footer>
+    </div>
+
+    <script>
+        let currentAuthMode = 'login';
+        let currentUser = null;
+        const Game = { cash: 10000, port: {}, mode: 'day', active: null };
+        const Stocks = [];
+        const cvs = document.getElementById('chart'), ctx = cvs.getContext('2d');
+
+        // --- AUTHENTICATION LOGIC ---
+        function setAuthMode(m) {
+            currentAuthMode = m;
+            document.getElementById('loginTab').classList.toggle('active', m==='login');
+            document.getElementById('signupTab').classList.toggle('active', m==='signup');
+            document.getElementById('authBtn').innerText = m==='login' ? 'INITIALIZE SESSION' : 'CREATE IDENTITY';
+        }
+
+        function handleAuth() {
+            const u = document.getElementById('username').value.trim();
+            const p = document.getElementById('password').value.trim();
+            const err = document.getElementById('authError');
+            if(!u || !p) { err.innerText = "Error: Fields cannot be empty."; return; }
+
+            let registry = JSON.parse(localStorage.getItem('QA_REGISTRY') || '{}');
+
+            if(currentAuthMode === 'signup') {
+                if(registry[u]) { err.innerText = "Error: ID already exists."; return; }
+                registry[u] = { password: p, cash: 10000, port: {} };
+                localStorage.setItem('QA_REGISTRY', JSON.stringify(registry));
+                err.style.color = "var(--green)";
+                err.innerText = "Identity Created. Switch to Login.";
+            } else {
+                if(!registry[u] || registry[u].password !== p) { err.innerText = "Error: Invalid ID or Key."; return; }
+                currentUser = u;
+                Game.cash = registry[u].cash;
+                Game.port = registry[u].port;
+                document.getElementById('authScreen').style.display = 'none';
+                document.getElementById('mainHub').style.display = 'flex';
+                document.getElementById('hubUser').innerText = "@" + u;
+                generateMarket();
+            }
+        }
+
+        // --- GAME ENGINE ---
+        function enterGame() {
+            document.getElementById('mainHub').style.display = 'none';
+            document.getElementById('app').style.visibility = 'visible';
+            viewStock(Stocks[0].sym);
+            setInterval(tick, 1000);
+            resize();
+        }
+
+        function generateMarket() {
+            const p = ["Net", "Cloud", "Bio", "Cyber", "Solar", "Zon", "App", "Nvid", "Tesla", "Micro"];
+            const s = ["Tech", "Systems", "Link", "Corp", "Soft", "Base", "X", "Dyne", "Grid", "Scale"];
+            for(let i=0; i<30; i++) {
+                let name = p[i%10] + s[Math.floor(Math.random()*10)];
+                Stocks.push({ name: name, sym: name.substring(0,3).toUpperCase() + (100+i), price: 100 + Math.random() * 400, vol: 0.02, hist: [] });
+            }
+            const list = document.getElementById('stockList');
+            Stocks.forEach(x => {
+                list.innerHTML += `<div class="ticker" id="tk-${x.sym}" onclick="viewStock('${x.sym}')">
+                    <span><b>${x.sym}</b></span><span id="p-${x.sym}">$0.00</span>
+                </div>`;
+            });
+        }
+
+        function viewStock(sym) {
+            Game.active = Stocks.find(x => x.sym === sym);
+            document.querySelectorAll('.ticker').forEach(e => e.classList.remove('active-t'));
+            document.getElementById('tk-'+sym).classList.add('active-t');
+            document.getElementById('sName').innerText = Game.active.name;
+        }
+
+        function setMode(m) {
+            Game.mode = m;
+            document.getElementById('tabDay').className = m==='day'?'mode-tab active-tab':'mode-tab';
+            document.getElementById('tabInv').className = m==='inv'?'mode-tab active-tab':'mode-tab';
+        }
+
+        function tick() {
+            Stocks.forEach(s => {
+                let open = s.price;
+                s.price += s.price * (Math.random() - 0.5) * s.vol;
+                s.hist.push({o: open, c: s.price, h: Math.max(open, s.price)+2, l: Math.min(open, s.price)-2});
+                if(s.hist.length > 50) s.hist.shift();
+                document.getElementById(`p-${s.sym}`).innerText = `$${s.price.toFixed(2)}`;
+            });
+            draw(); updateUI();
+            document.getElementById('clock').innerText = new Date().toLocaleTimeString();
+        }
+
+        function draw() {
+            ctx.clearRect(0,0,cvs.width,cvs.height);
+            const h = Game.active.hist; if(h.length < 2) return;
+            const min = Math.min(...h.map(x=>x.l))*0.99, max = Math.max(...h.map(x=>x.h))*1.01, range = max-min;
+            const w = cvs.width / 50;
+
+            h.forEach((d, i) => {
+                const x = i * w + (w/2);
+                const yO = cvs.height - ((d.o-min)/range * cvs.height);
+                const yC = cvs.height - ((d.c-min)/range * cvs.height);
+                const yH = cvs.height - ((d.h-min)/range * cvs.height);
+                const yL = cvs.height - ((d.l-min)/range * cvs.height);
+                const color = d.c >= d.o ? '#3fb950' : '#f85149';
+
+                if(Game.mode === 'day') {
+                    ctx.strokeStyle = color; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(x, yH); ctx.lineTo(x, yL); ctx.stroke();
+                    ctx.fillStyle = color; ctx.fillRect(i*w + 4, Math.min(yO, yC), w-8, Math.max(Math.abs(yO-yC), 1));
+                } else {
+                    ctx.strokeStyle = '#58a6ff'; ctx.lineWidth = 2;
+                    if(i>0) {
+                        let prevY = cvs.height - ((h[i-1].c-min)/range * cvs.height);
+                        ctx.beginPath(); ctx.moveTo((i-1)*w + (w/2), prevY); ctx.lineTo(x, yC); ctx.stroke();
+                    }
+                }
+            });
+        }
+
+        function trade(dir) {
+            const s = Game.active; if(!Game.port[s.sym]) Game.port[s.sym] = { qty: 0, avg: 0 };
+            const p = Game.port[s.sym];
+            if(dir === 1 && Game.cash >= s.price) { Game.cash -= s.price; p.avg = (p.qty*p.avg + s.price) / (++p.qty); }
+            else if(dir === -1 && p.qty > 0) { Game.cash += s.price; p.qty--; }
+            saveGame();
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('cashDisp').innerText = `$${Math.floor(Game.cash).toLocaleString()}`;
+            document.getElementById('sPrice').innerText = `$${Game.active.price.toFixed(2)}`;
+            const p = Game.port[Game.active.sym];
+            if(p && p.qty > 0) {
+                const diff = (Game.active.price - p.avg) * p.qty;
+                document.getElementById('pnlDisp').innerText = (diff>=0?"+":"") + "$" + diff.toFixed(2);
+                document.getElementById('pnlDisp').style.color = diff>=0?'var(--green)':'var(--red)';
+                document.getElementById('qtyDisp').innerText = `Units: ${p.qty} | Avg: $${p.avg.toFixed(2)}`;
+            } else {
+                document.getElementById('pnlDisp').innerText = "$0.00";
+                document.getElementById('pnlDisp').style.color = "#8b949e";
+                document.getElementById('qtyDisp').innerText = "Units: 0";
+            }
+        }
+
+        function saveGame(manual) {
+            let registry = JSON.parse(localStorage.getItem('QA_REGISTRY'));
+            registry[currentUser].cash = Game.cash;
+            registry[currentUser].port = Game.port;
+            localStorage.setItem('QA_REGISTRY', JSON.stringify(registry));
+            if(manual) alert("Terminal Data Synced.");
+        }
+
+        function resize() { cvs.width = cvs.offsetWidth; cvs.height = cvs.offsetHeight; }
+        window.onresize = resize;
+    </script></body></html>
