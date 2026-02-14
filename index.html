@@ -88,8 +88,11 @@
             </div>
             <div id="pnlDisp" style="font-size: 24px; font-weight: bold;">$0.00</div>
             <div id="qtyDisp" style="color: #8b949e; margin-bottom: 20px;">Units: 0</div>
-            <button class="btn btn-buy" onclick="trade(1)">Buy</button>
-            <button class="btn btn-sell" onclick="trade(-1)">Sell</button>
+            
+            <input type="number" id="tradeQty" placeholder="Amount" min="1" value="1">
+            <button class="btn btn-buy" onclick="trade(1)" style="background:var(--green); color:white; border:none;">Buy</button>
+            <button class="btn btn-sell" onclick="trade(-1)" style="background:var(--red); color:white; border:none;">Sell</button>
+            
             <div style="margin-top: auto;">
                 <button class="btn" onclick="saveGame(true)">Manual Sync</button>
                 <button class="btn" onclick="location.reload()">Log Out</button>
@@ -220,11 +223,40 @@
             });
         }
 
+        // --- UPDATED TRADE FUNCTION WITH QUANTITY CHECK ---
         function trade(dir) {
-            const s = Game.active; if(!Game.port[s.sym]) Game.port[s.sym] = { qty: 0, avg: 0 };
+            const s = Game.active;
+            const input = document.getElementById('tradeQty');
+            let qty = parseInt(input.value);
+            
+            if(isNaN(qty) || qty <= 0) return;
+            if(!Game.port[s.sym]) Game.port[s.sym] = { qty: 0, avg: 0 };
             const p = Game.port[s.sym];
-            if(dir === 1 && Game.cash >= s.price) { Game.cash -= s.price; p.avg = (p.qty*p.avg + s.price) / (++p.qty); }
-            else if(dir === -1 && p.qty > 0) { Game.cash += s.price; p.qty--; }
+
+            if(dir === 1) { 
+                // BUY LOGIC: Cap at max affordable
+                const maxBuy = Math.floor(Game.cash / s.price);
+                if(qty > maxBuy) {
+                    qty = maxBuy;
+                    input.value = qty;
+                }
+                if(qty > 0) {
+                    const total = s.price * qty;
+                    Game.cash -= total;
+                    p.avg = (p.qty*p.avg + total) / (p.qty + qty);
+                    p.qty += qty;
+                }
+            } else if(dir === -1) {
+                // SELL LOGIC: Cap at what you actually own
+                if(qty > p.qty) {
+                    qty = p.qty;
+                    input.value = qty;
+                }
+                if(qty > 0) {
+                    Game.cash += s.price * qty;
+                    p.qty -= qty;
+                }
+            }
             saveGame();
             updateUI();
         }
