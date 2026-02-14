@@ -89,9 +89,10 @@
             <div id="pnlDisp" style="font-size: 24px; font-weight: bold;">$0.00</div>
             <div id="qtyDisp" style="color: #8b949e; margin-bottom: 20px;">Units: 0</div>
             
-            <input type="number" id="tradeQty" placeholder="Amount" min="1" value="1">
-            <button class="btn btn-buy" onclick="trade(1)" style="background:var(--green); color:white; border:none;">Buy</button>
-            <button class="btn btn-sell" onclick="trade(-1)" style="background:var(--red); color:white; border:none;">Sell</button>
+            <button class="btn btn-buy" onclick="trade(1)">Buy</button>
+            <button class="btn btn-sell" onclick="trade(-1)">Sell</button>
+
+            <input type="number" id="tradeQty" placeholder="Order Amount" min="1" value="1" style="margin-top: 10px;">
             
             <div style="margin-top: auto;">
                 <button class="btn" onclick="saveGame(true)">Manual Sync</button>
@@ -112,7 +113,6 @@
         const Stocks = [];
         const cvs = document.getElementById('chart'), ctx = cvs.getContext('2d');
 
-        // --- AUTHENTICATION LOGIC ---
         function setAuthMode(m) {
             currentAuthMode = m;
             document.getElementById('loginTab').classList.toggle('active', m==='login');
@@ -125,9 +125,7 @@
             const p = document.getElementById('password').value.trim();
             const err = document.getElementById('authError');
             if(!u || !p) { err.innerText = "Error: Fields cannot be empty."; return; }
-
             let registry = JSON.parse(localStorage.getItem('QA_REGISTRY') || '{}');
-
             if(currentAuthMode === 'signup') {
                 if(registry[u]) { err.innerText = "Error: ID already exists."; return; }
                 registry[u] = { password: p, cash: 10000, port: {} };
@@ -146,7 +144,6 @@
             }
         }
 
-        // --- GAME ENGINE ---
         function enterGame() {
             document.getElementById('mainHub').style.display = 'none';
             document.getElementById('app').style.visibility = 'visible';
@@ -200,7 +197,6 @@
             const h = Game.active.hist; if(h.length < 2) return;
             const min = Math.min(...h.map(x=>x.l))*0.99, max = Math.max(...h.map(x=>x.h))*1.01, range = max-min;
             const w = cvs.width / 50;
-
             h.forEach((d, i) => {
                 const x = i * w + (w/2);
                 const yO = cvs.height - ((d.o-min)/range * cvs.height);
@@ -208,7 +204,6 @@
                 const yH = cvs.height - ((d.h-min)/range * cvs.height);
                 const yL = cvs.height - ((d.l-min)/range * cvs.height);
                 const color = d.c >= d.o ? '#3fb950' : '#f85149';
-
                 if(Game.mode === 'day') {
                     ctx.strokeStyle = color; ctx.lineWidth = 1;
                     ctx.beginPath(); ctx.moveTo(x, yH); ctx.lineTo(x, yL); ctx.stroke();
@@ -223,38 +218,37 @@
             });
         }
 
-        // --- UPDATED TRADE FUNCTION WITH QUANTITY CHECK ---
         function trade(dir) {
             const s = Game.active;
             const input = document.getElementById('tradeQty');
-            let qty = parseInt(input.value);
-            
-            if(isNaN(qty) || qty <= 0) return;
+            let requestedQty = parseInt(input.value);
+
+            if(isNaN(requestedQty) || requestedQty <= 0) return;
             if(!Game.port[s.sym]) Game.port[s.sym] = { qty: 0, avg: 0 };
             const p = Game.port[s.sym];
 
             if(dir === 1) { 
-                // BUY LOGIC: Cap at max affordable
-                const maxBuy = Math.floor(Game.cash / s.price);
-                if(qty > maxBuy) {
-                    qty = maxBuy;
-                    input.value = qty;
+                // BUY LOGIC: Force to max affordable
+                const maxAffordable = Math.floor(Game.cash / s.price);
+                if(requestedQty > maxAffordable) {
+                    requestedQty = maxAffordable;
+                    input.value = requestedQty;
                 }
-                if(qty > 0) {
-                    const total = s.price * qty;
-                    Game.cash -= total;
-                    p.avg = (p.qty*p.avg + total) / (p.qty + qty);
-                    p.qty += qty;
+                if(requestedQty > 0) {
+                    const totalCost = s.price * requestedQty;
+                    Game.cash -= totalCost;
+                    p.avg = (p.qty*p.avg + totalCost) / (p.qty + requestedQty);
+                    p.qty += requestedQty;
                 }
             } else if(dir === -1) {
-                // SELL LOGIC: Cap at what you actually own
-                if(qty > p.qty) {
-                    qty = p.qty;
-                    input.value = qty;
+                // SELL LOGIC: Force to total owned
+                if(requestedQty > p.qty) {
+                    requestedQty = p.qty;
+                    input.value = requestedQty;
                 }
-                if(qty > 0) {
-                    Game.cash += s.price * qty;
-                    p.qty -= qty;
+                if(requestedQty > 0) {
+                    Game.cash += s.price * requestedQty;
+                    p.qty -= requestedQty;
                 }
             }
             saveGame();
